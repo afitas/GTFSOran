@@ -8,6 +8,10 @@ import json
 import os
 import time, datetime
 
+import tornado.ioloop
+from tornado.web import RequestHandler, Application
+from tornado_http_auth import DigestAuthMixin, BasicAuthMixin, auth_required
+
 import xmltodict
 import pandas as pd
 from collections import OrderedDict
@@ -63,6 +67,15 @@ with open(configFolder + configFile) as f:
 for folder in [uploadFolder, xmlFolder, logFolder, configFolder, dbFolder, exportFolder]:
 	if not os.path.exists(folder):
 		os.makedirs(folder)
+
+
+
+# Basic Auth using credentials = {'oran': 'oran'} (using decorator).
+credentials = {'oran': 'oran'}
+class MainHandler(DigestAuthMixin, RequestHandler):
+    @auth_required(realm='Protected', auth_func=credentials.get)
+    def get(self):
+        self.render("index.html")
 
 
 # importing GTFSserverfunctions.py, embedding it inline to avoid re-declarations etc
@@ -1418,6 +1431,7 @@ def make_app():
 		(r"/API/tableColumn", tableColumn),
 		#(r"/API/idList", idList),
 		# (r"/(.*)", tornado.web.StaticFileHandler, {"path": root, "default_filename": "index.html"})
+		(r"/", MainHandler),
         (r"/(.*)", MyStaticFileHandler, {"path": root, "default_filename": "index.html"})
 
 	])
